@@ -10,10 +10,10 @@
         file: pre_install.yml
     # - name: network
     #   include_tasks:
-    #     file: common.yml
-    # - name: couchdb
-    #   include_tasks:
-    #     file: couchdb.yml
+         #file: common.yml
+#    - name: couchdb
+#      include_tasks:
+#         file: couchdb.yml
     # - name: django
     #   include_tasks:
     #     file: django.yml

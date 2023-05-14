@@ -1,0 +1,83 @@
+- hosts: demo1
+  vars_files:
+    - host_var/vars.yml
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+#    - name: Install Git
+#      apt:
+#        name:
+#          - git
+#          - python
+#        state: present
+#    - name: Copy file with owner and permissions
+#      ansible.builtin.copy:
+#        src: "{{git_ssh_key_file}}"
+#        dest: "{{dest_git_ssh_key}}}"
+#        owner: ubuntu
+#        group: ubuntu
+#        mode: '0600'
+#      register: copy_result
+#
+#    - name: print copy
+#      debug:
+#          var: copy_result
+#    - name: pull clone
+#      shell: git clone git@github.com:Comp90024-group32/Mastodon.git --config core.sshCommand="ssh -i ~/.ssh/git_ssh"
+#      args:
+#        chdir: '{{ mastodon_path}}'
+
+#    - name: git clone
+#      git:
+#         repo: "{{my_mastodon_git_repo}}"
+#         dest: "{{mastodon_path}}"
+#         clone: yes
+#         accept_hostkey: yes
+#         key_file: "{{git_ssh_key_file}}"
+#         refspec: "+refs/heads/main:refs/remotes/origin/master"
+#         force: yes
+
+
+    - name: Remove Docker image
+      docker_image:
+          name: "mastodon"
+          state: absent
+
+    - name: Build Docker image
+      docker_image:
+        name: "mastodon"
+        path: "{{mastodon_path}}"
+        tag: latest
+        state: present
+      register: docker_image_result
+
+    - name: Print return information
+      debug:
+        var: docker_image_result
+
+    - name: Create Docker container
+      docker_container:
+          name: 'mastodon_container'
+          image: 'mastodon'
+
+    - name: start docker container
+      docker_container:
+        name: 'mastodon_container'
+        state: started
+      register: state_start_container
+
+    - name: Add a container to a network, leaving existing containers connected
+      community.docker.docker_network:
+        name: "{{ docker_network_name }}"
+        connected:
+          - mastodon_container
+        appends: true
+
+    - name: Print return start
+      debug:
+        var: state_start_container

@@ -1,0 +1,57 @@
+- name: Setup CouchDB cluster
+  hosts: master-server
+  become: true
+  vars_files:
+    - host_var/instance_var.yml
+  vars:
+    - node_count: "{{ groups['workers'] | length }}"
+  tasks:
+    # Step 1: Enable clustering on the first node
+    - name: Enable clustering on the first node
+      docker_container:
+        name: "{{db_name}}"
+        image: "{{db_image}}"
+        env:
+          - NODENAME=couchdb@{{ inventory_hostname }}
+          - ERL_FLAGS="-setcookie couchdb_cluster -name couchdb@{{ inventory_hostname }}"
+        ports:
+          - "{{ db_port }}:{{ db_port }}"
+        volumes:
+          - couchdb_data:/opt/couchdb/data
+        restart_policy: unless-stopped
+        state: started
+      when: inventory_hostname == groups['workers'][0]
+
+    # Step 2: Join the other nodes to the cluster
+    - name: Join the other nodes to the cluster
+      docker_container:
+        name: couchdb-{{ index + 1 }}
+        image: couchdb:latest
+        env:
+          - NODENAME=couchdb@{{ inventory_hostname }}
+          - ERL_FLAGS="-setcookie couchdb_cluster -name couchdb@{{ inventory_hostname }}"
+          - COUCHDB_USER={{ db_user }}
+          - COUCHDB_PASSWORD={{ db_password }}
+          - COUCHDB_PORT={{ db_port }}
+          - ERLANG_COOKIE=couchdb_cluster
+        ports:
+          - "{{ couchdb_port }}:{{ couchdb_port }}"
+        volumes:
+          - couchdb_data:/opt/couchdb/data
+        restart_policy: unless-stopped
+        state: started
+      with_indexed_items: "{{ groups['workers'][1:] }}"
+      when: inventory_hostname != groups['workers'][0]
+
+    # Step 3: Wait for all nodes to be ready
+    - name: Wait for all nodes to be ready
+      uri:
+        url: "http://{{ groups['all'][0] }}:{{ couchdb_port }}/_membership"
+        method: GET
+        user: "{{ db_user }}"
+        password: "{{ db_password }}"
+        return_content: yes
+      register: couchdb_membership
+      until: couchdb_membership.status == 200 and couchdb_membership.json.cluster_nodes | length == node_count
+      retries: 10
+      delay: 10

@@ -2,54 +2,128 @@
   hosts: localhost
   gather_facts: no
   vars_files:
-    - vars.yml
+    - host_var/instance_var.yml
   tasks:
-    # - name: Create an MRC instance
-    #   openstack.cloud.server: 
-    #     auto_ip: false
-    #     availability_zone: "{{availability_zone}}"
-    #     flavor: "{{instance_flavor}}"
-    #     image: "{{instance_image}}"
-    #     key_name: "{{instance_key_name}}"
-    #     network: "{{instance_network}}"
-    #     name: "demo2"
-    #     security_groups: default,ssh
-    #     state: present
-    #     timeout: 600
-    #     wait: yes
-    #   register: os_instance
+    - name: Create an MRC instance
+      openstack.cloud.server: 
+        auto_ip: false
+        availability_zone: "{{availability_zone}}"
+        flavor: "{{instance_flavor}}"
+        image: "{{instance_image}}"
+        key_name: '{{ instance_key_name }}'
+        network: "{{instance_network}}"
+        name: "{{item.name}}"
+        security_groups: '{{ item.security_groups }}'
+        state: present
+        timeout: 600
+        wait: yes
+      loop: '{{instances}}'
+      register: os_instance
 
-    # - name: Print return information
-    #   debug:
-    #     var: os_instance
+    - name: Print return information
+      debug:
+        var: os_instance
+
+    - name: set ip address to fact
+      set_fact:
+        ip_addresses: "{{ ip_addresses|default([]) + [ {'name': item.item.name, 'ip': item.openstack.public_v4} ] }}"
+      when: item.openstack is defined
+      loop: '{{ os_instance.results }}'
+
+    - name: Print return information
+      debug:
+        var: ip_addresses
+
+    - name: set ip addresses to inventory file
+      lineinfile:
+        line: "[{{ item.name }}]\n{{ item.ip }}\n"
+        dest: "./inventory/host.ini"
+      loop: '{{ ip_addresses }}'
+
+    - name: Wait for connection
+      wait_for:
+        host: "{{ item.openstack.public_v4 }}"
+        port: 22
+        timeout: 120
+        search_regex: OpenSSH
+      loop: '{{ os_instance.results }}'
+      when: item.openstack is defined
+
+#    - name: Fix apt directory ownership and permissions
+#      file:
+#        path: /var/lib/apt/lists/
+#        owner: root
+#        group: root
+#        mode: '0755'
+#
+#    - name: Update apt cache
+#      become: True
+#      apt:
+#        update_cache: yes
+#
+#    - name: Install Git
+#      apt:
+#        name:
+#          - git
+#          - python
+#          - docker.io
+#        state: present
+#
+#    - name: git clone
+#      git:
+#        repo: "{{my_mastodon_git_repo}}"
+#        dest: "{{root_path}}{{react_path}}"
+#        single_branch: yes
+#        version: master
+#
+#    - name: Build Docker image
+#      docker_image:
+#        name: "Mastodon"
+#        path: "{{root_path}}{{react_path}}"
+#        tag: latest
+#        state: present
+#      register: docker_image_result
+#
+#    - name: Print return information
+#      debug:
+#        var: docker_image_result
+#
+#    - name: Create Docker container
+#      docker_container:
+#        name: 'Mastodon container'
+#        image: 'Mastodon'
+#
+#    - name: start docker container
+#      docker_container:
+#        name: 'Mastodon container'
+#        state: started
+#        register: state_start_container
+#
+#    - name: Print return start
+#      debug:
+#        var: state_start_container
 
 
-- name: Fix apt directory ownership and permissions
-  file:
-    path: /var/lib/apt/lists/
-    owner: root
-    group: root
-    mode: '0755'
-- name: Update apt cache
-  apt:
-    update_cache: yes
-- name: Install Git
-  apt:
-    name: 
-      - git
-      - docker.io
-      - nodejs
-    state: present
-- name: git clone 
-  git:
-    repo: "{{my_frontend_git_repo}}"
-    dest: "{{root_path}}{{react_path}}"
-    single_branch: yes
-    version: main
+# - name: Update apt cache
+#   apt:
+#     update_cache: yes
+# - name: Install Git
+#   apt:
+#     name:
+#       - git
+#       - docker.io
+#       - nodejs
+#     state: present
+# - name: git clone 
+#   git:
+#     repo: "{{my_frontend_git_repo}}"
+#     dest: "{{root_path}}{{react_path}}"
+#     single_branch: yes
+#     version: main
 
-- name: git clone 
-  git:
-    repo: "{{my_backend_git_repo}}"
-    dest: "{{root_path}}{{django_path}}"
-    single_branch: yes
-    version: main
+# - name: git clone 
+#   git:
+#     repo: "{{my_backend_git_repo}}"
+#     dest: "{{root_path}}{{django_path}}"
+#     single_branch: yes
+#     version: main

@@ -1,0 +1,54 @@
+- hosts: all
+  vars_files:
+    - host_var/instance_var.yml
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Update apt cache
+      become: True
+      apt:
+        update_cache: yes
+
+    - name: Install dependents
+      apt:
+        name:
+          - git
+          - python3
+          - docker.io
+          - python3-pip
+        state: present
+#
+#    - name: git clone
+#      git:
+#        repo: "{{my_mastodon_git_repo}}"
+#        dest: "{{root_path}}{{react_path}}"
+#        single_branch: yes
+#        version: master
+#
+#    - name: Build Docker image
+#      docker_image:
+#        name: "Mastodon"
+#        path: "{{root_path}}{{react_path}}"
+#        tag: latest
+#        state: present
+#      register: docker_image_result
+#
+#    - name: Print return information
+#      debug:
+#        var: docker_image_result
+#
+#    - name: Create Docker container
+#      docker_container:
+#        name: 'Mastodon container'
+#        image: 'Mastodon'
+#
+#    - name: start docker container
+#      docker_container:
+#        name: 'Mastodon container'
+#        state: started
+#        register: state_start_container
+#
+#    - name: Print return start
+#      debug:
+#        var: state_start_container

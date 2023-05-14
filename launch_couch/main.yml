@@ -1,0 +1,11 @@
+
+- name: Pull couch into docker
+  become: yes
+  community.docker.docker_image:
+    name: couchdb
+    tag: latest
+    source: pull
+
+- name: Template a couchdb .ini config
+  ansible.builtin.template:
+    src:

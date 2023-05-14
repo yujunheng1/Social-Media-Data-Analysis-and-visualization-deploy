@@ -1,0 +1,105 @@
+- hosts: data-server
+  vars_files:
+    - host_var/instance_var.yml
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: add github ssh key
+      copy:
+        src: "./.ssh/git_ssh"
+        dest: /home/ubuntu/.ssh/git_ssh
+        owner: ubuntu
+        group: ubuntu
+        mode: 0600
+
+    - name: configure ssh to use ansible key for github.com
+      template:
+        src: "config/ssh_config"
+        dest: /home/ubuntu/.ssh/config
+        owner: ubuntu
+        group: ubuntu
+        mode: 0644
+
+    - name: Start ssh-agent
+      shell: eval $(ssh-agent) && ssh-add /home/ubuntu/.ssh/git_ssh
+#
+#    - name: debug ssh agent
+#      debug:
+#        var: ssh-agent-result
+
+    - name: clone source code from git
+      git:
+        repo: ssh://git@github.com/Comp90024-group32/Mastodon.git
+        key_file: /home/ubuntu/.ssh/git_ssh
+        version: master
+        accept_hostkey: yes
+        dest: "{{mastodon_path}}"
+        force: yes
+#    - name: pull clone
+#      shell: git clone --f git@github.com:Comp90024-group32/Mastodon.git --config core.sshCommand="ssh -i /home/ubuntu/.ssh/git_ssh"
+#      args:
+#        chdir: /home/ubuntu
+    - name: Remove Docker image
+      docker_image:
+        name: "mastodon"
+        state: absent
+
+    - name: Build Docker image
+      docker_image:
+        name: "mastodon"
+        path: "{{mastodon_path}}"
+        tag: latest
+        state: present
+      register: docker_image_result
+
+    - name: Print return information
+      debug:
+        var: docker_image_result
+
+    - name: Create Docker container
+      docker_container:
+        name: 'mastodon_container'
+        image: 'mastodon'
+        networks:
+          - name: my-network
+
+    - name: start docker container
+      docker_container:
+        name: 'mastodon_container'
+        state: started
+      register: state_start_container
+
+    - name: Print return start
+      debug:
+        var: state_start_container
+#    - name: Build Docker image
+#      docker_image:
+#        name: "mastodon"
+#        path: "{{mastodon_path}}"
+#        tag: latest
+#        state: present
+#      register: docker_image_result
+#
+#    - name: Print return information
+#      debug:
+#         var: docker_image_result
+#
+#    - name: Create Docker container
+#      docker_container:
+#        name: 'mastodon container'
+#        image: 'mastodon'
+#        networks:
+#          - name: my-network
+#
+#    - name: start docker container
+#      docker_container:
+#        name: 'mastodon container'
+#        state: started
+#      register: state_start_container
+#
+#    - name: Print return start
+#      debug:
+#        var: state_start_container
+#
+

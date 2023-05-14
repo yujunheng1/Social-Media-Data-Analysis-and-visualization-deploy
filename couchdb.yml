@@ -1,19 +1,29 @@
-- name: Stop and remove existing CouchDB container
-  docker_container:
-    name: 
-    state: absent
-    force_kill: yes
-- name: Deploy CouchDB
-  docker_container:
-    name: 
-    image: 
-    pull: true
-    state: started
-    recreate: yes
-    env:
-      COUCHDB_USER: "{{db_user}}"
-      COUCHDB_PASSWORD: "{{db_password}}"
-    published_ports:
-      - ""
-    networks:
-      - name: 
+- hosts: data-server
+  vars_files:
+    - host_var/instance_var.yml
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Install docker
+      pip:
+        name: docker
+
+    - name: Create a network
+      community.docker.docker_network:
+        name: my-network
+
+    - name: Deploy CouchDB
+      docker_container:
+        name: "{{db_name}}"
+        image: couchdb
+        pull: true
+        state: started
+        recreate: yes
+        env:
+          COUCHDB_USER: "{{db_user}}"
+          COUCHDB_PASSWORD: "{{db_password}}"
+        published_ports:
+          - 5984:5984
+        networks:
+          - name: my-network
