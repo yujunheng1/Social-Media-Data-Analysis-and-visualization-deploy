@@ -1,57 +1,56 @@
-- name: Setup CouchDB cluster
-  hosts: master-server
-  become: true
+
+- hosts: workers
   vars_files:
-    - host_var/instance_var.yml
-  vars:
-    - node_count: "{{ groups['workers'] | length }}"
+    - host_vars/instance_var.yml
+  become: true
+
   tasks:
-    # Step 1: Enable clustering on the first node
-    - name: Enable clustering on the first node
-      docker_container:
-        name: "{{db_name}}"
-        image: "{{db_image}}"
-        env:
-          - NODENAME=couchdb@{{ inventory_hostname }}
-          - ERL_FLAGS="-setcookie couchdb_cluster -name couchdb@{{ inventory_hostname }}"
-        ports:
-          - "{{ db_port }}:{{ db_port }}"
-        volumes:
-          - couchdb_data:/opt/couchdb/data
-        restart_policy: unless-stopped
-        state: started
-      when: inventory_hostname == groups['workers'][0]
+  - name: Load CouchDB image
+    docker_image:
+      name: couchdb
+      source: pull
 
-    # Step 2: Join the other nodes to the cluster
-    - name: Join the other nodes to the cluster
-      docker_container:
-        name: couchdb-{{ index + 1 }}
-        image: couchdb:latest
-        env:
-          - NODENAME=couchdb@{{ inventory_hostname }}
-          - ERL_FLAGS="-setcookie couchdb_cluster -name couchdb@{{ inventory_hostname }}"
-          - COUCHDB_USER={{ db_user }}
-          - COUCHDB_PASSWORD={{ db_password }}
-          - COUCHDB_PORT={{ db_port }}
-          - ERLANG_COOKIE=couchdb_cluster
-        ports:
-          - "{{ couchdb_port }}:{{ couchdb_port }}"
-        volumes:
-          - couchdb_data:/opt/couchdb/data
-        restart_policy: unless-stopped
-        state: started
-      with_indexed_items: "{{ groups['workers'][1:] }}"
-      when: inventory_hostname != groups['workers'][0]
+  - name: Start CouchDB container
+    docker_container:
+      name: couch-node
+      image: couchdb
+      state: started
+      volumes:
+        - /data/couchdb:/opt/couchdb/data
+      env:
+        COUCHDB_USER: "{{ db_user }}"
+        COUCHDB_PASSWORD: "{{ db_password }}"
+        COUCHDB_SECRET: "{{ db_secret }}"
+        ERL_FLAGS: "-setcookie '{{ db_secret }}' -name 'couchdb@{{ inventory_hostname }}'"
+      ports:
+        - "5984:5984"
+        - "5986:5986"
+        - "4369:4369"
+        - "9100-9150:9100-9150"
 
-    # Step 3: Wait for all nodes to be ready
-    - name: Wait for all nodes to be ready
-      uri:
-        url: "http://{{ groups['all'][0] }}:{{ couchdb_port }}/_membership"
-        method: GET
-        user: "{{ db_user }}"
+  - name: Enable clustering on first node
+    uri:
+      url: "http://{{ db_user }}:{{ db_password }}@{{ groups['workers'][0] }}:5984/_cluster_setup"
+      method: POST
+      body_format: json
+      body:
+        action: "enable_cluster"
+        bind_address: "0.0.0.0"
+        username: "{{ db_user }}"
         password: "{{ db_password }}"
-        return_content: yes
-      register: couchdb_membership
-      until: couchdb_membership.status == 200 and couchdb_membership.json.cluster_nodes | length == node_count
-      retries: 10
-      delay: 10
+        node_count: "{{ groups['workers'] | length }}"
+    when: inventory_hostname == groups['workers'][0]
+
+  - name: Add nodes to cluster
+    uri:
+      url: "http://{{db_user }}:{{db_password }}@{{ groups['workers'][0] }}:5984/_cluster_setup"
+      method: POST
+      body_format: json
+      body:
+        action: "add_node"
+        host: "{{ inventory_hostname }}"
+        port: "5984"
+        username: "{{ db_user }}"
+        password: "{{ db_password }}"
+      status_code: 201
+    when: inventory_hostname != groups['workers'][0]

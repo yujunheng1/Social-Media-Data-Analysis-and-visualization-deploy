@@ -71,6 +71,7 @@ db_password: password
 db_name: couchdb-container
 db_image: couchdb
 db_port: 5984
+db_secret: "Hello world"
 
 
 #cluster

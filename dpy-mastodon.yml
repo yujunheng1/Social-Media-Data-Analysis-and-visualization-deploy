@@ -1,6 +1,6 @@
 - hosts: data-server
   vars_files:
-    - host_var/instance_var.yml
+    - host_vars/instance_var.yml
   gather_facts: true
   become: true
 

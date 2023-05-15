@@ -2,7 +2,7 @@
   hosts: localhost
   gather_facts: no
   vars_files:
-    - host_var/instance_var.yml
+    - host_vars/instance_var.yml
   tasks:
     - name: Create an MRC instance
       openstack.cloud.server: 

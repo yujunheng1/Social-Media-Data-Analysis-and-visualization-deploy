@@ -1,6 +1,6 @@
 - hosts: demo1
   vars_files:
-    - host_var/vars.yml
+    - host_vars/vars.yml
   gather_facts: true
   become: true
 
