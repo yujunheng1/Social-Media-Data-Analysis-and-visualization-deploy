@@ -13,7 +13,7 @@ db_name: couchdb-container
 couchdb_image:
 # 将repo地址替换成实际的github项目地址（git结尾）
 my_frontend_git_repo: 
-my_backend_git_repo:
+my_backend_git_repo: git@github.com:Comp90024-group32/backend_new.git
 my_mastodon_git_repo: git@github.com:Comp90024-group32/Mastodon.git
 availability_zone: melbourne-qh2-uom
 instance_flavor: uom.mse.1c4g

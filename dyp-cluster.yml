@@ -26,7 +26,11 @@
         - "5984:5984"
         - "5986:5986"
         - "4369:4369"
-        - "9100-9150:9100-9150"
+#        - "9100-9150:9100-9150"
+  - name: debug
+    debug:
+      var: "{{inventory_hostname}}"
+    when: inventory_hostname == groups['workers'][0]
 
   - name: Enable clustering on first node
     uri:
@@ -40,6 +44,7 @@
         password: "{{ db_password }}"
         node_count: "{{ groups['workers'] | length }}"
     when: inventory_hostname == groups['workers'][0]
+
 
   - name: Add nodes to cluster
     uri:
