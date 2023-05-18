@@ -25,7 +25,7 @@
 - name: setup couchdb cluster
   become: yes
   uri:
-    url: http://{{ groups['backend-server'][0] }}:5984/{{ cluster_name }}
+    url: http://{{ groups['data-server'][0] }}:5984/{{ cluster_name }}
     status_code: 201
     method: POST
     user: "{{ db_user }}"
@@ -39,15 +39,16 @@
              \"remote_current_user\":\"{{ db_user }}\", \"remote_current_password\":\"{{ db_password }}\"}"
     headers:
       Content-Type: "application/json"
-  loop: "{{ groups['workers'] }}"
+  loop: "{{ groups['database'] }}"
 
 
 - name: setup couchdb cluster | step 2
   become: yes
   uri:
-    url: http://{{ groups['backend-server'][0] }}:{{db_port}}/{{ cluster_name }}
-    status_code: 201,409
+    url: http://{{ groups['data-server'][0] }}:{{db_port}}/{{ cluster_name }}
+    status_code: 201
     method: POST
+    force: yes
     user: "{{db_user }}"
     password:  "{{ db_password }}"
     force_basic_auth: yes
@@ -57,14 +58,14 @@
              \"port\": \"{{ db_port }}\", \"username\": \"{{ db_user }}\", \"password\":\"{{ db_password }}\"}"
     headers:
       Content-Type: "application/json"
-  loop: "{{ groups['workers'] }}"
-
+  loop: "{{ groups['database'] }}"
+  ignore_errors: yes
 
 - name: setup couchdb cluster | step 2.5
   become: yes
   uri:
-    url: http://{{ groups['backend-server'][0] }}:{{db_port}}/
-    status_code: 200,201,409
+    url: http://{{ groups['data-server'][0] }}:{{db_port}}/
+    status_code: 200,201
     method: GET
     user: "{{ db_user }}"
     password:  "{{ db_password }}"
@@ -75,7 +76,7 @@
 - name: steup couchdb cluster | step 3 -- finish
   become: yes
   uri:
-    url: http://{{ groups['backend-server'][0] }}:{{ db_port }}/{{ cluster_name }}
+    url: http://{{ groups['data-server'][0] }}:{{ db_port }}/{{ cluster_name }}
     status_code: 201
     method: POST
     user: "{{ db_user }}"

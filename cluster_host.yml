@@ -1,25 +1,27 @@
-# Install depend
-#- hosts: master-server
-#  vars_files:
-#    - host_vars/instance_var.yml
-#  gather_facts: true
-#  roles:
-#    - role: couchdb_cluster
+ #Install depend
+- hosts: master-server
+  vars_files:
+    - host_vars/instance_var.yml
+  gather_facts: true
+  roles:
+    - role: couchdb_cluster
+
+
+- hosts: backend-server
+  vars_files:
+    - host_vars/instance_var.yml
+  gather_facts: true
+  roles:
+    - role: couchdb_cluster
+
+- hosts: data-server
+  vars_files:
+    - host_vars/instance_var.yml
+  gather_facts: true
+  roles:
+    - role: couchdb_cluster
+
 #
-#- hosts: data-server
-#  vars_files:
-#    - host_vars/instance_var.yml
-#  gather_facts: true
-#  roles:
-#    - role: couchdb_cluster
-#
-#- hosts: backend-server
-#  vars_files:
-#    - host_vars/instance_var.yml
-#  gather_facts: true
-#  roles:
-#    - role: couchdb_cluster
-##
 # Install depend
 - hosts: data-server
   vars_files:

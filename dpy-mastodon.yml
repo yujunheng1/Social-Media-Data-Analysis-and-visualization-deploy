@@ -1,4 +1,4 @@
-- hosts: data-server
+- hosts: demo1
   vars_files:
     - host_vars/instance_var.yml
   gather_facts: true
