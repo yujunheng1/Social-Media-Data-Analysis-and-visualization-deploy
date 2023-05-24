@@ -1,0 +1,108 @@
+
+security_groups:
+  - name: ssh
+    description: "SSH access security_group"
+    protocol: tcp
+    port_range_min: 22
+    port_range_max: 22
+    remote_ip_prefix: 0.0.0.0/0
+  - name: http
+    description: " HTTP security group"
+    protocol: tcp
+    port_range_min: 80
+    port_range_max: 80
+    remote_ip_prefix: 0.0.0.0/0
+
+  - name: https
+    description: " HTTPS security group"
+    protocol: tcp
+    port_range_min: 443
+    port_range_max: 443
+    remote_ip_prefix: 0.0.0.0/0
+
+  - name: couchdb
+    description: " couchdb security group "
+    protocol: tcp
+    port_range_min: 5984
+    port_range_max: 5984
+    remote_ip_prefix: 0.0.0.0/0
+
+  - name: other_couchdb
+    description: "Security group for couchdb more port"
+    protocol: tcp
+    port_range_min: 4369
+    port_range_max: 4369
+    remote_ip_prefix: 0.0.0.0/0
+  - name: couchdb-range
+    description: "Security group for couchdb range port"
+    protocol: tcp
+    port_range_min: 9100
+    port_range_max: 9200
+    remote_ip_prefix: 0.0.0.0/0
+
+volumes:
+  - vol_name: data-volume
+    vol_size: 60
+    device: /dev/vdb
+    mountpoint: /data
+  - vol_name: backend-volume
+    vol_size: 60
+    device: /dev/vdb
+    mountpoint: /data
+  - vol_name: frontend-volume
+    vol_size: 60
+    device: /dev/vdb
+    mountpoint: /data
+  - vol_name: master-volume
+    vol_size: 60
+    device: /dev/vdb
+    mountpoint: /data
+
+
+instances:
+#  - name: backend-server
+#    security_groups: ['ssh', 'http','https', 'couchdb','other_couchdb','couchdb-range']
+#    volumes: ['backend-volume']
+  - name: data-server
+    security_groups: ['ssh', 'http', 'https','couchdb','other_couchdb','couchdb-range']
+    volumes: ['data-volume']
+#  - name: master-server
+#    security_groups: ['ssh', 'http','https','couchdb','other_couchdb','couchdb-range']
+#    volumes: ['master-volume']
+#  - name: frontend-server
+#    security_groups: [ 'ssh', 'http','https','couchdb','other_couchdb','couchdb-range' ]
+#    volumes: ['frontend-volume']
+
+availability_zone: melbourne-qh2-uom
+#instance_flavor_small: uom.mse.1c4g
+instance_flavor: uom.mse.2c9g
+
+
+instance_image: bbaf16f8-2484-48d7-b455-42209cc4b8d2
+instance_key_name: demo
+instance_network: qh2-uom-internal
+root_path: /home/ubuntu
+
+mastodon_path: /home/ubuntu/mastodon
+ansible_user: ubuntu
+my_mastodon_git_repo: git@github.com:Comp90024-group32/Mastodon.git
+ansible_ssh_private_key_file: ~/.ssh/demo
+#ansible_ssh_pass: junheng
+
+db_user: admin
+db_password: password
+db_name: couchdb-container
+db_image: couchdb
+db_port: 5984
+#couchdb_cookie: "Hello world"
+cluster_communication_port_min: 9100
+cluster_communication_port_max: 9200
+
+#cluster
+cluster_name: "_cluster_setup"
+
+#docker
+docker_db: docker_couchdb
+
+
+cookie: 'a192aeb9904e6590849337933b000c99'

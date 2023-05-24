@@ -1,0 +1,52 @@
+- name: Create four instance and get ip address
+  hosts: localhost
+  gather_facts: no
+  vars_files:
+    - host_vars/instance_var.yml
+  tasks:
+    - name: Create an MRC instance
+      openstack.cloud.server:
+        auto_ip: false
+        availability_zone: "{{availability_zone}}"
+        flavor: "{{instance_flavor}}"
+        image: "{{instance_image}}"
+        key_name: '{{ instance_key_name }}'
+        network: "{{instance_network}}"
+        name: "{{item.name}}"
+        security_groups: '{{ item.security_groups }}'
+        state: present
+        timeout: 600
+        wait: yes
+      loop: '{{instances}}'
+      register: os_instance
+
+    - name: Print return information
+      debug:
+        var: os_instance
+
+    - name: set ip address to fact
+      set_fact:
+        ip_addresses: "{{ ip_addresses|default([]) + [ {'name': item.item.name, 'ip': item.openstack.public_v4} ] }}"
+      when: item.openstack is defined
+      loop: '{{ os_instance.results }}'
+
+    - name: Print return information
+      debug:
+        var: ip_addresses
+
+    - name: set ip addresses to inventory file
+      lineinfile:
+        line: "[{{ item.name }}]\n{{ item.ip }}\n"
+        dest: "./inventory/host.ini"
+      loop: '{{ ip_addresses }}'
+
+    - name: Wait for connection
+      wait_for:
+        host: "{{ item.openstack.public_v4 }}"
+        port: 22
+        timeout: 120
+        search_regex: OpenSSH
+      loop: '{{ os_instance.results }}'
+      when: item.openstack is defined
+
+n

@@ -1,0 +1,107 @@
+
+- name: Uninstall docker-py and docker package
+  become: True
+  pip:
+    name:
+      - docker-py
+      - docker
+    state: absent
+
+- name: Install docker-py package
+  become: True
+  pip:
+    name: docker-py
+    state: present
+
+- name: Create a network
+  become: True
+  community.docker.docker_network:
+    name: my-network
+
+
+- name: Load CouchDB image
+  become: True
+  docker_image:
+    name: "{{couchdb_image}}"
+    source: pull
+
+- name: Change file ownership, group and permissions
+  ansible.builtin.file:
+    path: /opt/couchdb/etc
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+  become: true
+
+- name: Template a file to
+  ansible.builtin.template:
+    src: vm.args
+    dest: /opt/couchdb/etc
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+  become: true
+
+- name: Start CouchDB container
+  become: True
+  docker_container:
+    name: couch-node
+    image: "{{couchdb_image}}"
+    state: started
+    volumes:
+#      - /data/couchdb:/opt/couchdb/data
+      - /opt/couchdb/etc/vm.args:/opt/couchdb/etc/vm.args
+    env:
+      COUCHDB_USER: "{{ db_user }}"
+      COUCHDB_PASSWORD: "{{ db_password }}"
+      COUCHDB_SECRET: "{{ cookie }}"
+    ports:
+      - "5984:5984"
+      - "4369:4369"
+      - "9100-9200:9100-9200"
+    networks:
+      - name: "{{network_name}}"
+  register: result_couchdb
+
+#waitting for the couchdb start
+- name: Pause for 300 seconds waiting couchDB running up
+  tags: 'couchdb-cluster'
+  pause: minutes=5
+
+- name: create _user database
+  uri:
+    url: http://{{ansible_host}}:5984/_users
+    force_basic_auth: yes
+    user: "{{ db_user }}"
+    password: "{{ db_password }}"
+    method: PUT
+    status_code: 201,412
+  register: result
+
+
+
+
+- name: create _replicator database
+  uri:
+    url: http://{{ansible_host}}:5984/_replicator
+    force_basic_auth: yes
+    user: "{{ db_user }}"
+    password: "{{ db_password }}"
+    method: PUT
+    status_code: 201,412
+  register: result
+
+
+- name: Install and configure CouchDB Photon plugin
+  shell: |
+    couch="-H Content-Type:application/json -X PUT http://{{ db_user }}:{{ db_password }}@{{inventory_hostname}}:5984"
+    curl $couch/photon
+    curl https://raw.githubusercontent.com/ermouth/couch-photon/master/photon.json | \
+    curl $couch/photon/_design/photon -d @-
+    curl $couch/photon/_security -d '{}'
+    curl $couch/_node/_local/_config/csp/attachments_enable -d '"false"'
+    curl $couch/_node/_local/_config/chttpd_auth/same_site -d '"lax"'
+  args:
+    executable: /bin/bash
+

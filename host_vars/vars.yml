@@ -1,0 +1,33 @@
+docker_password: password
+db_user: admin
+db_password: password
+db_name: couchdb-container
+couchdb_image: couchdb
+
+
+#ssh git link
+my_frontend_git_repo: git@github.com:Comp90024-group32/build_try.git
+frontend_path: /home/ubuntu/frontend
+docker_frontend_image: react_app
+frontend_container_name: frontend_container
+frontend_port: '80:80'
+
+my_backend_git_repo: git@github.com:Comp90024-group32/backend.git
+backend_path: /home/ubuntu/backend
+docker_backend_image: flask_app
+backend_container_name: backend_container
+backend_port: '443'
+
+#vars of mastodon API application
+my_mastodon_git_repo: git@github.com:Comp90024-group32/Mastodon.git
+mastodon_path: /home/ubuntu/mastodon
+mastodon_image: mastodon_image
+mastodon_container: mastodon_container
+
+network_name: my-network
+
+ansible_ssh_private_key_file: ~/.ssh/demo
+git_ssh_key_file: ~/.ssh/git_ssh
+dest_git_ssh_key: ~/.ssh
+ansible_user: ubuntu
+#ansible_ssh_passphrase: junheng

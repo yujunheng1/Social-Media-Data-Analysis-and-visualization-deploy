@@ -1,0 +1,49 @@
+- name: clone source code from git
+  git:
+    repo: "{{my_mastodon_git_repo}}"
+    key_file: /home/ubuntu/.ssh/git_ssh
+    version: master
+    accept_hostkey: yes
+    dest: "{{mastodon_path}}"
+    force: yes
+
+#if mastodon image exist, remove it
+- name: Remove Docker image
+  become: True
+  docker_image:
+    name: "{{mastodon_image}}"
+    state: absent
+
+# build mastodon image
+- name: Build Docker image
+  become: True
+  docker_image:
+    name: "{{mastodon_image}}"
+    path: "{{mastodon_path}}"
+    tag: latest
+    state: present
+  register: docker_image_result
+
+- name: Print return information
+  debug:
+    var: docker_image_result
+
+- name: Create Docker container
+  become: True
+  docker_container:
+    name: '{{mastodon_container}}'
+    image: "{{mastodon_image}}"
+    networks:
+      - name: my-network
+
+#
+- name: start docker container
+  become: True
+  docker_container:
+    name: '{{mastodon_container}}'
+    state: started
+  register: state_start_container
+
+- name: Print return start
+  debug:
+    var: state_start_container

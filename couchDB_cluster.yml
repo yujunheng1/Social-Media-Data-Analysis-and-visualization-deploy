@@ -1,0 +1,33 @@
+#- hosts: backend-server
+#  vars_files:
+#    - host_vars/instance_var.yml
+#    - host_vars/vars.yml
+#  gather_facts: true
+#  roles:
+#    - role: deploy-couchDB
+#
+
+#- hosts: data-server
+#  vars_files:
+#    - host_vars/instance_var.yml
+#    - host_vars/vars.yml
+#  gather_facts: true
+#  roles:
+#    - role: deploy-couchDB
+
+#- hosts: frontend-server
+#  vars_files:
+#    - host_vars/instance_var.yml
+#    - host_vars/vars.yml
+#  gather_facts: true
+#  roles:
+#    - role: deploy-couchDB
+#
+- hosts: master-server
+  vars_files:
+   - host_vars/instance_var.yml
+   - host_vars/vars.yml
+  gather_facts: true
+  roles:
+    - role: deploy-couchDB
+    - role: deploy-cluster

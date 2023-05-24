@@ -1,0 +1,15 @@
+- name: clone source code from git
+  git:
+    repo: "{{my_backend_git_repo}}"
+    key_file: /home/ubuntu/.ssh/git_ssh
+    version: main
+    accept_hostkey: yes
+    dest: "{{backend_path}}"
+    force: yes
+
+- name: Install backend package
+  pip:
+    requirements: "{{my_backend_git_repo}}/required.txt"
+
+- name: Run backend.py script
+  command: python3 backend.py --host 0.0.0.0 --port 443

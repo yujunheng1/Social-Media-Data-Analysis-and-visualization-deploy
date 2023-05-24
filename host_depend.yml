@@ -1,0 +1,27 @@
+#- hosts: backend-server
+#  vars_files:
+#    - host_vars/instance_var.yml
+#  gather_facts: true
+#  roles:
+#    - role: Install_package
+#
+#- hosts: master-server
+#  vars_files:
+#   - host_vars/instance_var.yml
+#  gather_facts: true
+#  roles:
+#    - role: Install_package
+
+- hosts: data-server
+  vars_files:
+    - host_vars/instance_var.yml
+  gather_facts: true
+  roles:
+    - role: Install_package
+
+#- hosts: frontend-server
+#  vars_files:
+#    - host_vars/instance_var.yml
+#  gather_facts: true
+#  roles:
+#    - role: Install_package

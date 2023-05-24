@@ -1,0 +1,55 @@
+- name: Pull NGINX Docker image
+  become: True
+  docker_image:
+    name: nginx
+    source: pull
+
+- name: clone source code from git
+  git:
+    repo: "{{my_frontend_git_repo}}"
+    key_file: /home/ubuntu/.ssh/git_ssh
+    version: main
+    accept_hostkey: yes
+    dest: "{{frontend_path}}"
+    force: yes
+
+
+- name: Remove Docker image
+  become: True
+  docker_image:
+    name: "{{docker_frontend_image}}"
+    state: absent
+
+- name: Build Docker image
+  become: True
+  docker_image:
+    name: "{{docker_frontend_image}}"
+    path: "{{frontend_path}}"
+    tag: latest
+    state: present
+  register: docker_image_result
+
+- name: Create Docker container
+  become: True
+  docker_container:
+    name: '{{frontend_container_name}}'
+    image: "{{docker_frontend_image}}"
+    ports:
+      - "80:80"
+    volumes:
+      - /home/build:/home/build
+
+
+- name: Run frontend container
+  become: True
+  docker_container:
+    name: "{{ frontend_container_name }}"
+    image: "{{ docker_frontend_image }}"
+    volumes:
+      - "{{ frontend_container_name }}:/app"
+      - /app/node_modules
+    ports:
+      - "{{frontend_port}}"
+    state: started
+    restart_policy: unless-stopped
+

@@ -1,0 +1,19 @@
+- name: add github ssh key
+  copy:
+    src: "./.ssh/git_ssh"
+    dest: /home/ubuntu/.ssh/git_ssh
+    owner: ubuntu
+    group: ubuntu
+    mode: 0600
+
+- name: configure ssh to use ansible key for github.com
+  template:
+    src: "config/ssh_config"
+    dest: /home/ubuntu/.ssh/config
+    owner: ubuntu
+    group: ubuntu
+    mode: 0644
+
+
+- name: Start ssh-agent
+  shell: eval $(ssh-agent) && ssh-add /home/ubuntu/.ssh/git_ssh
