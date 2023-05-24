@@ -1,0 +1,9 @@
+- name: Copy file to remote host
+  hosts: your_remote_host
+  become: true
+
+  tasks:
+    - name: Copy file
+      copy:
+        src: /path/to/local/file
+        dest: /path/to/remote/file

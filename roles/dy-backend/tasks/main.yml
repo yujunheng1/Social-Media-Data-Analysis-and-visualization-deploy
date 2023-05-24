@@ -1,0 +1,39 @@
+
+- name: clone source code from git
+  git:
+    repo: "{{my_backend_git_repo}}"
+    key_file: /home/ubuntu/.ssh/git_ssh
+    version: main
+    accept_hostkey: yes
+    dest: "{{backend_path}}"
+    force: yes
+
+- name: Remove Docker image
+  become: True
+  docker_image:
+    name: "{{docker_backend_image}}"
+    state: absent
+
+- name: Build Docker image
+  become: True
+  docker_image:
+    name: "{{docker_backend_image}}"
+    path: "{{backend_path}}"
+    tag: latest
+    state: present
+  register: docker_image_result
+
+- name: Create Docker container
+  become: True
+  docker_container:
+    name: '{{backend_container_name}}'
+    image: "{{docker_backend_image}}"
+    ports:
+      - "443:5000"
+
+- name: start docker container
+  become: True
+  docker_container:
+    name: '{{backend_container_name}}'
+    state: started
+  register: state_start_container

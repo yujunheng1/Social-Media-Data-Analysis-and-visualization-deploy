@@ -1,0 +1,4 @@
+my_frontend_git_repo: git@github.com:Comp90024-group32/frontend_new-main.git
+my_backend_git_repo: git@github.com:Comp90024-group32/backend.git
+my_mastodon_git_repo: git@github.com:Comp90024-group32/Mastodon.git
+

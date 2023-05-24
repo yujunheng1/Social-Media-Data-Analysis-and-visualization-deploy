@@ -1,0 +1,9 @@
+- hosts: backend-server
+  vars_files:
+    - host_vars/instance_var.yml
+    - host_vars/vars.yml
+  gather_facts: true
+  roles:
+    #- role: couchdb_cluster
+    - role: add_git_ssh
+    - role: dy-backend

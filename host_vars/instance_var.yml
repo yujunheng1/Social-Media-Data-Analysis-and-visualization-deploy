@@ -25,6 +25,12 @@ security_groups:
     port_range_min: 4369
     port_range_max: 4369
     remote_ip_prefix: 0.0.0.0/0
+  - name: couchdb-range
+    description: "Security group for couchdb range port"
+    proto: tcp
+    port_range_min: 9100
+    port_range_max: 9150
+    remote_ip_prefix: 0.0.0.0/0
 
 #  - name: couchdb-addition
 #    description: "Security group for couchdb addition port"
@@ -54,11 +60,11 @@ security_groups:
 
 instances:
   - name: backend-server
-    security_groups: ['ssh', 'http', 'couchdb','other_couchdb']
+    security_groups: ['ssh', 'http', 'couchdb','other_couchdb','couchdb-range']
   - name: data-server
-    security_groups: ['ssh', 'http', 'couchdb','other_couchdb']
+    security_groups: ['ssh', 'http', 'couchdb','other_couchdb','couchdb-range']
   - name: master-server
-    security_groups: ['ssh', 'http','couchdb','other_couchdb']
+    security_groups: ['ssh', 'http','couchdb','other_couchdb','couchdb-range']
 
 availability_zone: melbourne-qh2-uom
 instance_flavor: uom.mse.1c4g
@@ -79,11 +85,16 @@ db_password: password
 db_name: couchdb-container
 db_image: couchdb
 db_port: 5984
-db_secret: "Hello world"
-
+#couchdb_cookie: "Hello world"
+cluster_communication_port_min: 9100
+cluster_communication_port_max: 9200
 
 #cluster
 cluster_name: "_cluster_setup"
 
 #docker
 docker_db: docker_couchdb
+
+
+cookie: 'a192aeb9904e6590849337933b000c99'
+ip : 172.26.136.29

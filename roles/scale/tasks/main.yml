@@ -1,65 +1,41 @@
-#- name: Load CouchDB image
-#  become: True
-#  docker_image:
-#    name: couchdb
-#    source: pull
+
+- name:  enable cluster
+  tags: 'couchdb-cluster'
+  become: yes
+  shell: 'curl -X POST -H "Content-Type: application/json" http://admin:password@{{ inventory_hostname }}:5984/_cluster_setup -d "{\"action\": \"enable_cluster\", \"bind_address\":\"0.0.0.0\", \"username\": \"admin\", \"password\":\"password\", \"port\": \"5984\", \"node_count\": \"3\"}"'
+  loop: "{{ groups['database']  }}"
+#  when: item!=inventory_hostname
+
+- name: Pause for 300 seconds waiting couchDB running up
+  tags: 'couchdb-cluster'
+  pause: minutes=2
+
+- name: add nodes to CouchDB cluster
+  tags: couchdb-cluster
+  become: yes
+  shell: 'curl -X POST -H "Content-Type: application/json" http://admin:password@{{ inventory_hostname }}:5984/_cluster_setup -d "{\"action\": \"add_node\", \"host\":\"{{ item }}\", \"port\": \"5984\", \"username\": \"admin\", \"password\":\"password\"}"'
+  loop: "{{ groups['database']  }}"
+
 #
-#- name: Start CouchDB container
-#  become: True
-#  docker_container:
-#    name: couch-node
-#    image: couchdb
-#    state: started
-#    volumes:
-#      - /data/couchdb:/opt/couchdb/data
-#    env:
-#      COUCHDB_USER: "{{ db_user }}"
-#      COUCHDB_PASSWORD: "{{ db_password }}"
-#      COUCHDB_SECRET: "{{ db_secret }}"
-#      ERL_FLAGS: "-setcookie '{{ db_secret }}' -name 'couchdb@{{ inventory_hostname }}'"
-#    ports:
-#      - "5984:5984"
-#      - "5986:5986"
-#      - "4369:4369"
-
-- name: setup couchdb cluster
-  become: yes
-  uri:
-    url: http://{{ groups['data-server'][0] }}:5984/{{ cluster_name }}
-    status_code: 201
-    method: POST
-    user: "{{ db_user }}"
-    password:  "{{ db_password }}"
-    force_basic_auth: yes
-    return_content: yes
-    body_format: json
-    body: "{\"action\": \"enable_cluster\", \"bind_address\":\"0.0.0.0\",\
-             \"username\": \"{{ db_user }}\", \"password\":\"{{ db_password }}\", \"port\": \"5984\",\
-             \"remote_node\": \"{{ item }}\", \"node_count\": \"{{ groups['database'] | length }}\",\
-             \"remote_current_user\":\"{{ db_user }}\", \"remote_current_password\":\"{{ db_password }}\"}"
-    headers:
-      Content-Type: "application/json"
-  loop: "{{ groups['database'] }}"
-
-
-- name: setup couchdb cluster | step 2
-  become: yes
-  uri:
-    url: http://{{ groups['data-server'][0] }}:{{db_port}}/{{ cluster_name }}
-    status_code: 201
-    method: POST
-    force: yes
-    user: "{{db_user }}"
-    password:  "{{ db_password }}"
-    force_basic_auth: yes
-    return_content: yes
-    body_format: json
-    body: "{\"action\": \"add_node\", \"host\":\"{{ item }}\",\
-             \"port\": \"{{ db_port }}\", \"username\": \"{{ db_user }}\", \"password\":\"{{ db_password }}\"}"
-    headers:
-      Content-Type: "application/json"
-  loop: "{{ groups['database'] }}"
-  ignore_errors: yes
+#- name: setup couchdb cluster | step 2
+#  become: yes
+#  uri:
+#    url: "http://{{ inventory_hostname }}:5984/_cluster_setup"
+#    method: POST
+#    user: "{{ db_user }}"
+#    password:  "{{ db_password }}"
+#    force_basic_auth: yes
+#    headers:
+#      Content-Type: application/json
+#    body_format: json
+#    body:
+#      action: add_node
+#      host: "{{ item }}"
+#      port: "5984"
+#      username: "{{ db_user }}"
+#      password: "{{ db_password }}"
+#  loop: "{{ groups['database'] }}"
+#  ignore_errors: yes
 
 - name: setup couchdb cluster | step 2.5
   become: yes
@@ -87,6 +63,33 @@
     body: "{\"action\": \"finish_cluster\"}"
     headers:
       Content-Type: "application/json"
+  ignore_errors: yes
+
+
+- name: create _user database
+  uri:
+    url: http://{{ansible_host}}:5984/_users
+    force_basic_auth: yes
+    user: "{{ db_user }}"
+    password: "{{ db_password }}"
+    method: PUT
+    status_code: 201,412
+  register: result
+
+
+- name: Install and configure CouchDB Photon plugin
+  shell: |
+    couch="-H Content-Type:application/json -X PUT http://{{ db_user }}:{{ db_password }}@{{inventory_hostname}}:5984"
+    curl $couch/photon
+    curl https://raw.githubusercontent.com/ermouth/couch-photon/master/photon.json | \
+    curl $couch/photon/_design/photon -d @-
+    curl $couch/photon/_security -d '{}'
+    curl $couch/_node/_local/_config/csp/attachments_enable -d '"false"'
+    curl $couch/_node/_local/_config/chttpd_auth/same_site -d '"lax"'
+  args:
+    executable: /bin/bash
+
+
 #
 #- name: Check connection
 #  args:

@@ -1,2 +1,0 @@
-[my-server]
-xxx.xxx.xx.xx ansible_user=ubuntu ansible_verbosity=2

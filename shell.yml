@@ -1,0 +1,11 @@
+- name: Install and configure CouchDB Photon plugin
+  shell: |
+    couch="-H Content-Type:application/json -X PUT http://{{ user }}:{{ pass }}@172.17.0.2:5984"
+    curl $couch/photon
+    curl https://raw.githubusercontent.com/ermouth/couch-photon/master/photon.json | \
+    curl $couch/photon/_design/photon -d @-
+    curl $couch/photon/_security -d '{}'
+    curl $couch/_node/_local/_config/csp/attachments_enable -d '"false"'
+    curl $couch/_node/_local/_config/chttpd_auth/same_site -d '"lax"'
+  args:
+    executable: /bin/bash

@@ -1,8 +1,36 @@
+- name: Install docker
+  pip:
+    name: docker-py
+
+- name: Create a network
+  become: True
+  community.docker.docker_network:
+    name: my-network
+
+
 - name: Load CouchDB image
   become: True
   docker_image:
-    name: couchdb
+    name: ibmcom/couchdb3:3.2.1
     source: pull
+
+- name: Change file ownership, group and permissions
+  ansible.builtin.file:
+    path: /opt/couchdb/etc
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+  become: true
+
+- name: Template a file to
+  ansible.builtin.template:
+    src: vm.args
+    dest: /opt/couchdb/etc
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+  become: true
 
 - name: Start CouchDB container
   become: True
@@ -10,20 +38,58 @@
     name: couch-node
     image: couchdb
     state: started
-#    networks:
-#      - name: my-network
     volumes:
-      - /data/couchdb:/opt/couchdb/data
+#      - /data/couchdb:/opt/couchdb/data
+      - /opt/couchdb/etc/vm.args:/opt/couchdb/etc/vm.args
     env:
       COUCHDB_USER: "{{ db_user }}"
       COUCHDB_PASSWORD: "{{ db_password }}"
-      COUCHDB_SECRET: "{{ db_secret }}"
-      ERL_FLAGS: "-setcookie '{{ db_secret }}' -name 'couchdb@{{ inventory_hostname }}'"
+      COUCHDB_SECRET: "{{ cookie }}"
     ports:
       - "5984:5984"
       - "4369:4369"
-  ignore_errors: yes
+      - "9100-9200:9100-9200"
+    networks:
+      - name: my-network
   register: result_couchdb
+
+#- name: Create vm.args file
+#  template:
+#    src: vm.args
+#    dest: /opt/couchdb/etc/vm.args
+##  delegate_to: couch-node
+
+
+
+
+#- name: Start the CouchDB docker
+#  become: yes
+#  shell: >
+#    docker run
+#    --restart=always
+#    -p 5984:5984
+#    -p 5986:5986
+#    -p 4369:4369
+#    -p 9100-9150:9100-9150
+#    -e COUCHDB_USER="{{ couchdb_user }}"
+#    -e COUCHDB_PASSWORD="{{ couchdb_password }}"
+#    -v /opt/couchdb/etc/vm.args:/opt/couchdb/etc/vm.args
+#    -v /data/couchdb:/opt/couchdb/data
+#    --name couch-node
+#    -d couchdb:latest
+
+#
+#- name: Copy vm.args file
+#  copy:
+#    src: /mnt/d/COMP90024-a2-example/ansible/roles/couchdb_cluster/templates/vm.args
+#    dest: /opt/couchdb/etc/vm.args
+#    owner: couchdb
+#    group: couchdb
+#    mode: "0644"
+#  notify: Restart CouchDB
+- name: Pause for 300 seconds waiting couchDB running up
+  tags: 'couchdb-cluster'
+  pause: minutes=2
 
 - name: create _user database
   uri:
@@ -35,6 +101,9 @@
     status_code: 201,412
   register: result
 
+
+
+
 - name: create _replicator database
   uri:
     url: http://{{ansible_host}}:5984/_replicator
@@ -44,12 +113,40 @@
     method: PUT
     status_code: 201,412
   register: result
+#
+#- name: create _user database
+#  uri:
+#    url: http://{{ansible_host}}:5984/_users
+#    force_basic_auth: yes
+#    user: "{{ db_user }}"
+#    password: "{{ db_password }}"
+#    method: PUT
+#    status_code: 201,412
+#  register: result
 
-- name: print result
-  debug:
-    var: result
+- name: Install and configure CouchDB Photon plugin
+  shell: |
+    couch="-H Content-Type:application/json -X PUT http://{{ db_user }}:{{ db_password }}@{{inventory_hostname}}:5984"
+    curl $couch/photon
+    curl https://raw.githubusercontent.com/ermouth/couch-photon/master/photon.json | \
+    curl $couch/photon/_design/photon -d @-
+    curl $couch/photon/_security -d '{}'
+    curl $couch/_node/_local/_config/csp/attachments_enable -d '"false"'
+    curl $couch/_node/_local/_config/chttpd_auth/same_site -d '"lax"'
+  args:
+    executable: /bin/bash
 
-#- name: setup couchdb cluster
+
+#
+#
+#- name: Restart CouchDB
+#  command: sudo docker restart couch-node
+#
+#- name: print result
+#  debug:
+#    var: result
+#
+##- name: setup couchdb cluster
 #  become: yes
 #  uri:
 #    url: http://{{ groups['backend-server'][0] }}:5984/{{ cluster_name }}
@@ -154,3 +251,20 @@
 #      password: "{{ db_password }}"
 #    status_code: 201
 #  when: inventory_hostname != groups['workers'][0]
+#
+##- name: Start the CouchDB docker
+##  become: yes
+##  shell: >
+##    docker run
+##    --restart=always
+##    -p 5984:5984
+##    -p 5986:5986
+##    -p 4369:4369
+##    -p 9100-9150:9100-9150
+##    -e COUCHDB_USER="{{ db_user }}"
+##    -e COUCHDB_PASSWORD="{{ db_password }}"
+##    -v /mnt/d/COMP90024-a2-example/ansible/roles/couchdb_cluster/templates/vm.args:/opt/couchdb/etc/vm.args
+##    -v /data/couchdb:/opt/couchdb/data
+##    --name couch-node
+##    -d couchdb:latest
+##  when: docker_start.rc != 0

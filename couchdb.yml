@@ -8,6 +8,7 @@
     - name: Install docker
       pip:
         name: docker-py
+
     - name: Create a network
       community.docker.docker_network:
         name: my-network
@@ -24,5 +25,4 @@
           COUCHDB_PASSWORD: "{{db_password}}"
         published_ports:
           - 5984:5984
-        networks:
-          - name: my-network
+
