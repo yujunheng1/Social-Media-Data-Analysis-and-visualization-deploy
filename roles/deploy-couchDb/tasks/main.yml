@@ -1,4 +1,4 @@
-
+#to prevent install two package for create a network
 - name: Uninstall docker-py and docker package
   become: True
   pip:
@@ -12,7 +12,7 @@
   pip:
     name: docker-py
     state: present
-
+#create a network for the container to communicate with other container
 - name: Create a network
   become: True
   community.docker.docker_network:
@@ -33,7 +33,7 @@
     group: ubuntu
     mode: '0755'
   become: true
-
+#copy the vm.args into the server
 - name: Template a file to
   ansible.builtin.template:
     src: vm.args

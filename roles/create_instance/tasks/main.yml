@@ -28,7 +28,7 @@
 - name: Print return information
   debug:
     var: ip_addresses
-
+#to storage the ip address
 - name: set ip addresses to inventory file
   lineinfile:
     line: "[{{ item.name }}]\n{{ item.ip }}\n"

@@ -6,10 +6,40 @@
     accept_hostkey: yes
     dest: "{{backend_path}}"
     force: yes
+# to update the image
+- name: Remove Docker image
+  become: True
+  docker_image:
+    name: "{{docker_backend_image}}"
+    state: absent
 
-- name: Install backend package
-  pip:
-    requirements: "{{my_backend_git_repo}}/required.txt"
+- name: Build Docker image
+  become: True
+  docker_image:
+    name: "{{docker_backend_image}}"
+    path: "{{backend_path}}"
+    tag: latest
+    state: present
+  register: docker_image_result
 
-- name: Run backend.py script
-  command: python3 backend.py --host 0.0.0.0 --port 443
+- name: Print return information
+  debug:
+    var: docker_image_result
+
+- name: Create Docker container
+  become: True
+  docker_container:
+    name: '{{backend_container_name}}'
+    image: "{{docker_backend_image}}"
+    networks:
+      - name: my-network
+
+- name: start docker container
+  become: True
+  docker_container:
+    name: '{{backend_container_name}}'
+    state: started
+    ports:
+      - "443:443"
+  register: state_start_container
+

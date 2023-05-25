@@ -1,3 +1,5 @@
+#deploy frontend web app
+
 - hosts: frontend-server
   vars_files:
     - host_vars/instance_var.yml

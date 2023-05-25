@@ -1,3 +1,4 @@
+#deploy mastodon application
 - hosts: data-server
   vars_files:
     - host_vars/instance_var.yml

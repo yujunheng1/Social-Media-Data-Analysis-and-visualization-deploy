@@ -6,7 +6,7 @@ couchdb_image: couchdb
 
 
 #ssh git link
-my_frontend_git_repo: git@github.com:Comp90024-group32/build_try.git
+my_frontend_git_repo: git@github.com:Comp90024-group32/frontend_build.git
 frontend_path: /home/ubuntu/frontend
 docker_frontend_image: react_app
 frontend_container_name: frontend_container

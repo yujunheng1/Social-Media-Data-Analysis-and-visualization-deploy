@@ -1,8 +1,9 @@
+# get the number of the nodes
 - name: Record the number of groups
   set_fact:
     group_count: "{{ groups | length }}"
-
-- name: setup couchdb cluster
+#choose a node to setup cluster
+- name: setup couchdb cluster | Enable cluster
   become: yes
   uri:
     url: http://{{ groups['master-server'][0] }}:5984/{{ cluster_name }}
@@ -21,8 +22,8 @@
       Content-Type: "application/json"
   loop: "{{ groups['all'] }}"
 
-
-- name: setup couchdb cluster | step 2
+#add the other nodes
+- name: setup couchdb cluster | Add node
   become: yes
   uri:
     url: http://{{ groups['master-server'][0] }}:{{db_port}}/{{ cluster_name }}
@@ -41,7 +42,7 @@
   loop: "{{ groups['all'] }}"
   ignore_errors: yes
 
-- name: setup couchdb cluster | step 2.5
+- name: setup couchdb cluster
   become: yes
   uri:
     url: http://{{ groups['master-server'][0] }}:{{db_port}}/
@@ -53,7 +54,7 @@
     return_content: yes
 
 
-- name: steup couchdb cluster | step 3 -- finish
+- name: steup couchdb cluster| Finish config
   become: yes
   uri:
     url: http://{{ groups['master-server'][0] }}:{{ db_port }}/{{ cluster_name }}

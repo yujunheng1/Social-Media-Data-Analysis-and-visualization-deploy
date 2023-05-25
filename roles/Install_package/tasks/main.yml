@@ -12,14 +12,14 @@
       - docker.io
       - python3-pip
     state: present
-
+#install docker, for create a network
 - name: Install docker
   become: True
   pip:
     name: docker
 
-- name: Install docker
-  become: True
-  pip:
-    name: docker-py
-
+#- name: Install docker
+#  become: True
+#  pip:
+#    name: docker-py
+#
