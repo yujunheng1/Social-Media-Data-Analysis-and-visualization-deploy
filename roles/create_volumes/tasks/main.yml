@@ -1,5 +1,3 @@
-
-
 - name: Create volume(s) on NeCTAR
   os_volume:
     display_name: '{{ item.vol_name }}'

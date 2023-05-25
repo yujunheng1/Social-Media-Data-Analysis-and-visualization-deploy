@@ -1,7 +1,7 @@
 # get the number of the nodes
 - name: Record the number of groups
   set_fact:
-    group_count: "{{ groups | length }}"
+    group_count: "{{ groups | length-1 }}"
 #choose a node to setup cluster
 - name: setup couchdb cluster | Enable cluster
   become: yes

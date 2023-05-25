@@ -1,4 +1,5 @@
 #create security group volumes and instances this is the first step
+#install some package in local host
 - hosts: localhost
   vars_files:
     - host_vars/instance_var.yml

@@ -1,11 +1,12 @@
-#- hosts: backend-server
-#  vars_files:
-#    - host_vars/instance_var.yml
-#    - host_vars/vars.yml
-#  gather_facts: true
-#  roles:
-#    - role: add_git_ssh
-#    - role: deploy-backend
+- hosts: backend-server
+  vars_files:
+    - host_vars/instance_var.yml
+    - host_vars/vars.yml
+  gather_facts: true
+  roles:
+    - role: add_git_ssh
+    - role: deploy-backend
+
 #backup
 - hosts: master-server
   vars_files:
@@ -16,11 +17,3 @@
     - role: add_git_ssh
     - role: deploy-backend
 
-- hosts: data-server
-  vars_files:
-    - host_vars/instance_var.yml
-    - host_vars/vars.yml
-  gather_facts: true
-  roles:
-    - role: add_git_ssh
-    - role: deploy-backend

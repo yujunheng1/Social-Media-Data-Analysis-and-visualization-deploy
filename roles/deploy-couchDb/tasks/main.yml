@@ -1,17 +1,17 @@
 #to prevent install two package for create a network
-- name: Uninstall docker-py and docker package
-  become: True
-  pip:
-    name:
-      - docker-py
-      - docker
-    state: absent
+#- name: Uninstall docker-py and docker package
+#  become: True
+#  pip:
+#    name:
+#      - docker-py
+#      - docker
+#    state: absent
 
-- name: Install docker-py package
-  become: True
-  pip:
-    name: docker-py
-    state: present
+#- name: Install docker-py package
+#  become: True
+#  pip:
+#    name: docker-py
+#    state: present
 #create a network for the container to communicate with other container
 - name: Create a network
   become: True
@@ -33,7 +33,7 @@
     group: ubuntu
     mode: '0755'
   become: true
-#copy the vm.args into the server
+#copy the vm.arg
 - name: Template a file to
   ansible.builtin.template:
     src: vm.args
@@ -50,7 +50,7 @@
     image: "{{couchdb_image}}"
     state: started
     volumes:
-#      - /data/couchdb:/opt/couchdb/data
+      - /data/couchdb:/opt/couchdb/data
       - /opt/couchdb/etc/vm.args:/opt/couchdb/etc/vm.args
     env:
       COUCHDB_USER: "{{ db_user }}"
